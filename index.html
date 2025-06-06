@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Checklist Mejorado</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    .editable-item, .editable-subitem {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Checklist Mejorado</h1>
+
+  <table id="tabla-checklist">
+    <tr>
+      <th>Ítem</th>
+      <th>Completado</th>
+    </tr>
+    <tr>
+      <td class="editable-item">Ejemplo de ítem</td>
+      <td><input type="checkbox"></td>
+    </tr>
+  </table>
+
+  <br>
+
+  <button onclick="authorizeEditing()">Autorizar edición</button>
+  <button onclick="promptAddRow()">Agregar fila en posición</button>
+  <button onclick="imprimirTabla()">Imprimir</button>
+  <button onclick="exportarAPDF()">Guardar como PDF</button>
+  <button onclick="guardarCambios()">Guardar Cambios</button>
+
+  <script>
+    let isEditingAuthorized = false;
+
+    function handleCellEdit(e) {
+      if (!isEditingAuthorized) {
+        alert("La edición de ítems y sub-ítems no está autorizada.");
+        e.preventDefault();
+      }
+    }
+
+    function setEditListeners() {
+      document.querySelectorAll('.editable-item, .editable-subitem').forEach(cell => {
+        cell.addEventListener('dblclick', handleCellEdit);
+      });
+    }
+
+    function authorizeEditing() {
+      const password = prompt("Ingrese contraseña para editar:");
+      if (password === "autorizado") {
+        isEditingAuthorized = true;
+        alert("Edición habilitada.");
+      } else {
+        alert("Contraseña incorrecta.");
+      }
+    }
+
+    function addRowAt(index) {
+      const table = document.querySelector("#tabla-checklist");
+      const newRow = table.insertRow(index);
+      const cell1 = newRow.insertCell(0);
+      const cell2 = newRow.insertCell(1);
+      cell1.className = "editable-item";
+      cell1.textContent = "Nuevo Ítem";
+      cell2.innerHTML = '<input type="checkbox">';
+      setEditListeners();
+    }
+
+    function promptAddRow() {
+      const index = parseInt(prompt("¿En qué posición desea agregar la nueva fila?"));
+      if (!isNaN(index)) addRowAt(index);
+      else alert("Índice inválido.");
+    }
+
+    function imprimirTabla() {
+      const printWindow = window.open('', '', 'width=800,height=600');
+      printWindow.document.write('<html><head><title>Imprimir</title></head><body>');
+      printWindow.document.write(document.querySelector("#tabla-checklist").outerHTML);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+
+    function exportarAPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.autoTable({ html: '#tabla-checklist' });
+      doc.save('checklist.pdf');
+    }
+
+    function guardarCambios() {
+      const tabla = document.querySelector("#tabla-checklist").outerHTML;
+      localStorage.setItem("tablaChecklist", tabla);
+      alert("Cambios guardados en el navegador.");
+    }
+
+    function cargarCambiosGuardados() {
+      const tablaGuardada = localStorage.getItem("tablaChecklist");
+      if (tablaGuardada) {
+        document.querySelector("#tabla-checklist").outerHTML = tablaGuardada;
+        setEditListeners();
+        alert("Cambios cargados.");
+      } else {
+        setEditListeners();
+      }
+    }
+
+    window.onload = cargarCambiosGuardados;
+  </script>
+</body>
+</html>
